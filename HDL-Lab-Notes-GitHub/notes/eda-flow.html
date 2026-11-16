@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="description" content="整理 Simulation、Synthesis、STA、APR、DRC、LVS 的工作與驗證重點。"/><meta name="theme-color" content="#080d13"/>
+    <title>從 RTL 到 LVS：EDA Flow · HDL Lab Notes</title><link rel="stylesheet" href="../assets/css/styles.css"/>
+    <script defer src="../assets/js/site.js"></script></head><body><div class="reading-progress" data-progress></div><header class="site-header"><div class="wrap nav">
+      <a class="brand" href="../index.html" aria-label="HDL Lab Notes 首頁"><span class="brand-icon" aria-hidden="true">⌁</span><span>HDL <b>Lab Notes</b></span><small>DESIGN JOURNAL</small></a>
+      <nav class="nav-links" id="main-nav" data-nav-links aria-label="主要導覽">
+        <a href="../index.html" >首頁</a>
+        <a href="../index.html#assignments" >作業紀錄</a>
+        <a href="../index.html#notes" aria-current="page">技術筆記</a>
+        <a href="../index.html#workflow">設計流程</a>
+      </nav>
+      <a class="nav-cta" href="../index.html#assignments">Explore <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" type="button" data-menu-button aria-controls="main-nav" aria-expanded="false" aria-label="開啟選單">☰</button>
+    </div></header><main><section class="article-head"><div class="wrap"><div class="crumbs"><a href="../index.html">首頁</a><span>/</span><a href="../index.html#notes">技術筆記</a><span>/</span><span>從 RTL 到 LVS：EDA Flow</span></div>
+        <div class="article-label">NOTE / 01 / 技術筆記</div><h1>從 RTL 到 LVS：EDA Flow</h1><p class="article-deck">把整條數位 IC 設計流程串起來。整理 Simulation、Synthesis、STA、APR、DRC、LVS 的工作與驗證重點。</p>
+        <div class="article-meta"><span>2026-11-16</span><span>◷ 約 4 分鐘</span><div class="tags"><span>EDA</span><span>Design Flow</span></div></div></div></section>
+        <div class="wrap article-grid"><article class="prose"><blockquote>
+<p>以 HW3 的 Pipelined THUMB CPU 作業為例，整理數位 IC 設計流程。這是一篇依個人實驗經驗撰寫的學習筆記。</p>
+</blockquote>
+<h2 id="section-1">01 / 流程總覽</h2>
+<p><strong>RTL Design → Functional Simulation → Logic Synthesis → Timing / Power Analysis → Placement &amp; Routing → DRC / LVS</strong></p>
+<p>每個階段的重點不同：前半段確保<strong>功能與邏輯</strong>，後半段處理<strong>實體布局、時序、製程規則和電路一致性</strong>。</p>
+<h2 id="section-2">02 / RTL 與 Simulation</h2>
+<p>Verilog RTL 描述暫存器、運算邏輯與訊號如何在 Clock Edge 間更新。使用 Testbench 驗證邊界條件、Reset 與輸入輸出時序。在 HW3 中，四個 Pipeline Stage 依序是 IF、ID、EX、WB。</p>
+<h2 id="section-3">03 / Synthesis（DC）</h2>
+<p>Design Compiler 將 RTL 與時序約束映射成 Standard Cells，產生 Gate-Level Netlist。需要查看 <strong>Area、Critical Path、Slack</strong>，並比較不同約束下的取捨。</p>
+<h2 id="section-4">04 / Timing 與 Power（PT）</h2>
+<p>PrimeTime 讀入網表、Timing Constraint 與活動資訊分析路徑及功耗。DC 的估計功率與 PT 根據 VCD 活動推算的數據，因分析條件不同而可能不同。</p>
+<h2 id="section-5">05 / APR（Innovus）</h2>
+<p>常見步驟包含 <strong>Floorplan、Power Planning、Placement、CTS、Routing、Optimization</strong>。Placement 決定 Cell 位置；CTS 建立時脈分配；Routing 完成金屬連線；後續檢查 Setup / Hold Timing。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-layout.webp" alt="THUMB CPU 的 Post-Route Layout"/><figcaption>THUMB CPU 的 Post-Route Layout</figcaption></figure>
+<h2 id="section-6">06 / DRC 與 LVS</h2>
+<p><strong>DRC（Design Rule Check）</strong> 驗證實體布局是否符合相關製程規則；<strong>LVS（Layout Versus Schematic）</strong> 比較 Layout 抽取電路與來源 Netlist 的一致性。HW3 最終紀錄是 DRC <strong>0 Violations</strong>、LVS <strong>CORRECT</strong>。</p>
+<h2 id="section-7">07 / 這次實際學到什麼</h2>
+<p>EDA Flow 最重要的是每個階段留下可以檢查的結果。模擬檢查功能、Timing Report 檢查時序、DRC 檢查實體設計規則、LVS 檢查連線與元件對應。當驗證不通過時，回到該階段的報告定位原因。</p>
+<p><em>資料來源：本人 HDL HW3 報告與執行紀錄；部分定義為個人整理。</em></p>
+<nav class="article-prevnext" aria-label="文章導覽"><a href="../index.html#notes">← 回到文章列表</a><a href="#">↑ 回到頂端</a></nav></article>
+         <aside class="article-aside"><div class="toc-title">ON THIS PAGE / 文章目錄</div><nav class="toc" data-toc aria-label="本篇目錄"></nav><div class="aside-bottom"><a href="../index.html#assignments">↗ 全部作業紀錄</a><a href="../index.html#notes">↗ 全部技術筆記</a></div></aside></div></main>
+      <div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="圖片放大預覽" aria-hidden="true"><button class="lightbox-close" data-lightbox-close aria-label="關閉圖片">×</button><img alt="放大圖片"/><div class="lightbox-caption" data-lightbox-caption></div></div><footer class="footer"><div class="wrap footer-inner"><p>© 2026 HDL Lab Notes · Hardware Description Language / Learning Journal</p><div class="utility-links"><a href="../index.html">回到首頁</a><a href="../AGENTS.md" target="_blank" rel="noopener">AI 開發規範 ↗</a></div></div></footer></body></html>

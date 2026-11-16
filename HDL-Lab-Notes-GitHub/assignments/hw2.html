@@ -1,0 +1,80 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="description" content="比較三種硬體架構的 PPA，透過 VCS、DC、PrimeTime 與 Vivado 驗證組合邏輯、Pipeline 與 Clock Gating。"/><meta name="theme-color" content="#080d13"/>
+    <title>Pipeline &amp; Clock Gating · HDL Lab Notes</title><link rel="stylesheet" href="../assets/css/styles.css"/>
+    <script defer src="../assets/js/site.js"></script></head><body><div class="reading-progress" data-progress></div><header class="site-header"><div class="wrap nav">
+      <a class="brand" href="../index.html" aria-label="HDL Lab Notes 首頁"><span class="brand-icon" aria-hidden="true">⌁</span><span>HDL <b>Lab Notes</b></span><small>DESIGN JOURNAL</small></a>
+      <nav class="nav-links" id="main-nav" data-nav-links aria-label="主要導覽">
+        <a href="../index.html" >首頁</a>
+        <a href="../index.html#assignments" aria-current="page">作業紀錄</a>
+        <a href="../index.html#notes" >技術筆記</a>
+        <a href="../index.html#workflow">設計流程</a>
+      </nav>
+      <a class="nav-cta" href="../index.html#assignments">Explore <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" type="button" data-menu-button aria-controls="main-nav" aria-expanded="false" aria-label="開啟選單">☰</button>
+    </div></header><main><section class="article-head"><div class="wrap"><div class="crumbs"><a href="../index.html">首頁</a><span>/</span><a href="../index.html#assignments">作業紀錄</a><span>/</span><span>Pipeline &amp; Clock Gating</span></div>
+        <div class="article-label">HW / 02 / 作業紀錄</div><h1>Pipeline &amp; Clock Gating</h1><p class="article-deck">RTL 寫法、延遲、面積與功耗的取捨。比較三種硬體架構的 PPA，透過 VCS、DC、PrimeTime 與 Vivado 驗證組合邏輯、Pipeline 與 Clock Gating。</p>
+        <div class="article-meta"><span>2026-10-24</span><span>◷ 約 5 分鐘</span><div class="tags"><span>Verilog</span><span>PPA</span><span>Clock Gating</span></div></div></div></section>
+        <div class="wrap article-grid"><article class="prose"><blockquote>
+<p>實驗主題：同一個算術運算，透過不同 Verilog 寫法、Pipeline 與 Clock Gating，比較面積、延遲、功耗與模擬結果。整理依據為本人《HW2_Report_PPA_Final_20261024》作業報告。</p>
+</blockquote>
+<h2 id="section-1">01 / 作業目標</h2>
+<p>這次實驗先比較兩種等價的乘加運算寫法，再比較共用加減法器的合成效果，最後實作 <strong>Non-Pipelined、Pipelined、Clock-Gated</strong> 三個版本。使用 VCS 進行 RTL / Gate-Level 模擬，透過 Design Compiler（DC）取得 PPA，再使用 PrimeTime（PT）及 Vivado 查看實際活動功率與 FPGA Implementation。</p>
+<p><strong>核心問題</strong>：RTL 是硬體的描述方式，合成器會依運算結構、共享情形及時序約束產生不同的電路。</p>
+<h2 id="section-2">02 / RTL 寫法如何影響 PPA</h2>
+<p>兩個算術式子 <code>a*c + b*c</code> 與 <code>(a+b)*c</code> 數學上等價，但對應的運算結構不同。作業報告中的結果顯示，共因式版本使 Area 從 <strong>161.740803 μm²</strong> 降到 <strong>89.890562 μm²</strong>（約 <strong>44.4%</strong>），但 Delay 從 <strong>0.500517 ns</strong> 增加到 <strong>0.650433 ns</strong>（約 <strong>30.0%</strong>）。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-multiply-compare.webp" alt="HW2 乘法寫法的 DC PPA 比較"/><figcaption>HW2 乘法寫法的 DC PPA 比較</figcaption></figure>
+<p>我從這個實驗理解到，<strong>硬體資源共享通常有助於縮小面積，但運算依賴也可能增加 Critical Path</strong>。同樣在加減法器比較中，<code>add_sub_2</code>、<code>add_sub_3</code> 的 Area 為 <strong>13.633920 μm²</strong>，比 <code>add_sub_1</code> 的 <strong>18.455040 μm²</strong> 少約 <strong>26.1%</strong>。</p>
+<h2 id="section-3">03 / 三種架構對照</h2>
+<div class="table-scroller"><table>
+<thead>
+<tr>
+  <th>架構</th>
+  <th style="text-align:right">DC Area (μm²)</th>
+  <th style="text-align:right">DC Critical Delay (ns)</th>
+  <th>特徵</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Non-Pipelined</td>
+  <td style="text-align:right">189.527044</td>
+  <td style="text-align:right">約 0.280</td>
+  <td>組合邏輯，不經 Pipeline Register</td>
+</tr>
+<tr>
+  <td>Pipelined</td>
+  <td style="text-align:right">210.677765</td>
+  <td style="text-align:right">約 0.280</td>
+  <td>兩級運算，使用 Stage Register</td>
+</tr>
+<tr>
+  <td>Clock-Gated</td>
+  <td style="text-align:right">230.428805</td>
+  <td style="text-align:right">約 0.290</td>
+  <td>Pipeline 加上時脈活動控制</td>
+</tr>
+</tbody>
+</table></div>
+<figure><img loading="lazy" src="../assets/images/hw2-ppa-overview.webp" alt="三種架構的 HW2 PPA 整理表"/><figcaption>三種架構的 HW2 PPA 整理表</figcaption></figure>
+<p>上述是這次報告保留的 DC 結果。面積隨 Pipeline Register 與 Clock-Gating 邏輯增加；時序與功耗則要搭配測試條件及工具報告解讀。</p>
+<h2 id="section-4">04 / 波形與資料對齊</h2>
+<p><strong>Non-Pipelined</strong> 在輸入更新後，組合邏輯輸出會依電路延遲改變；<strong>Pipelined</strong> 第一級先記錄 <code>a±b</code> 與 <code>c</code>，第二級在後續 Clock Edge 完成乘法，因此 Testbench 必須把 <code>d</code> 與正確的歷史輸入 <code>expected</code> 對齊。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-non-pipelined-wave.webp" alt="HW2 Non-Pipelined 波形"/><figcaption>HW2 Non-Pipelined 波形</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw2-pipelined-wave.webp" alt="HW2 Pipelined 波形"/><figcaption>HW2 Pipelined 波形</figcaption></figure>
+<p><strong>Clock-Gated</strong> 版本在 <code>c=0</code> 時停止部分 Stage 1 Register 的無效切換，同時保留正確的零值處理。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-clock-gated-wave.webp" alt="HW2 Clock-Gated 波形"/><figcaption>HW2 Clock-Gated 波形</figcaption></figure>
+<h2 id="section-5">05 / Clock Gating 省電結果</h2>
+<p>PrimeTime 使用兩組架構相同測試活動的 VCD 功率資訊。作業報告記錄 <strong>Pipelined 約 4.35×10⁻⁵ W、Clock-Gated 約 3.45×10⁻⁵ W</strong>，在這次測試活動下約降低 <strong>20.7%</strong>。測試條件為 <strong>200 組 Pattern（<code>c=0</code> 與 <code>c≠0</code> 各 100 組）</strong>。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-pt-power.webp" alt="HW2 PrimeTime 功率報告"/><figcaption>HW2 PrimeTime 功率報告</figcaption></figure>
+<p>Clock-Gating 報告顯示 1 個 ICG、24／41 個 Gated Registers（58.54%）。功耗節省量會隨資料分布、Clock Activity 與工具設定改變；因此不能把這個百分比直接當作所有應用都能達成的結果。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-clock-gating-report.webp" alt="HW2 Clock Gating Report"/><figcaption>HW2 Clock Gating Report</figcaption></figure>
+<h2 id="section-6">06 / 自動驗證與 FPGA</h2>
+<p>作業使用 <strong>200 組輸入</strong>進行驗證，並保留 VCS 的 PASS 紀錄；Vivado 部分則進行 Behavioral / Post-Implementation Functional Simulation。這次報告記錄的 Vivado XDC Clock Period 為 <strong>10 ns</strong>、Setup WNS <strong>+4.454 ns</strong>。</p>
+<figure><img loading="lazy" src="../assets/images/hw2-automatic-check.webp" alt="HW2 自動化驗證畫面"/><figcaption>HW2 自動化驗證畫面</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw2-vivado-summary.webp" alt="HW2 Vivado Implementation Summary"/><figcaption>HW2 Vivado Implementation Summary</figcaption></figure>
+<h2 id="section-7">07 / 實驗心得</h2>
+<p>這次最有價值的收穫，是能從同一個功能的不同 RTL 寫法看見 <strong>Area / Delay Trade-off</strong>；Pipeline 也讓我理解資料必須依時脈分級處理，而 Clock Gating 的效果需要搭配 VCD Activity 才能量化。往後閱讀 PPA 時，我會一起檢查合成條件、Stage Timing、功率工具與測試輸入。</p>
+<p><em>資料來源：本人 HDL HW2 作業報告，整理日期 2026-10-24。截圖為本人作業成果。</em></p>
+<nav class="article-prevnext" aria-label="文章導覽"><a href="../index.html#assignments">← 回到文章列表</a><a href="#">↑ 回到頂端</a></nav></article>
+         <aside class="article-aside"><div class="toc-title">ON THIS PAGE / 文章目錄</div><nav class="toc" data-toc aria-label="本篇目錄"></nav><div class="aside-bottom"><a href="../index.html#assignments">↗ 全部作業紀錄</a><a href="../index.html#notes">↗ 全部技術筆記</a></div></aside></div></main>
+      <div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="圖片放大預覽" aria-hidden="true"><button class="lightbox-close" data-lightbox-close aria-label="關閉圖片">×</button><img alt="放大圖片"/><div class="lightbox-caption" data-lightbox-caption></div></div><footer class="footer"><div class="wrap footer-inner"><p>© 2026 HDL Lab Notes · Hardware Description Language / Learning Journal</p><div class="utility-links"><a href="../index.html">回到首頁</a><a href="../AGENTS.md" target="_blank" rel="noopener">AI 開發規範 ↗</a></div></div></footer></body></html>

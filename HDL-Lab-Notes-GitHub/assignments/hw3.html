@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="description" content="從 RTL / Gate-level 模擬，到 DC、PrimeTime、Innovus 與 Calibre，記錄一次完整的數位 IC 設計流程。"/><meta name="theme-color" content="#080d13"/>
+    <title>Pipelined THUMB CPU · HDL Lab Notes</title><link rel="stylesheet" href="../assets/css/styles.css"/>
+    <script defer src="../assets/js/site.js"></script></head><body><div class="reading-progress" data-progress></div><header class="site-header"><div class="wrap nav">
+      <a class="brand" href="../index.html" aria-label="HDL Lab Notes 首頁"><span class="brand-icon" aria-hidden="true">⌁</span><span>HDL <b>Lab Notes</b></span><small>DESIGN JOURNAL</small></a>
+      <nav class="nav-links" id="main-nav" data-nav-links aria-label="主要導覽">
+        <a href="../index.html" >首頁</a>
+        <a href="../index.html#assignments" aria-current="page">作業紀錄</a>
+        <a href="../index.html#notes" >技術筆記</a>
+        <a href="../index.html#workflow">設計流程</a>
+      </nav>
+      <a class="nav-cta" href="../index.html#assignments">Explore <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" type="button" data-menu-button aria-controls="main-nav" aria-expanded="false" aria-label="開啟選單">☰</button>
+    </div></header><main><section class="article-head"><div class="wrap"><div class="crumbs"><a href="../index.html">首頁</a><span>/</span><a href="../index.html#assignments">作業紀錄</a><span>/</span><span>Pipelined THUMB CPU</span></div>
+        <div class="article-label">HW / 03 / 作業紀錄</div><h1>Pipelined THUMB CPU</h1><p class="article-deck">四級 Pipeline、合成分析、APR 與 LVS。從 RTL / Gate-level 模擬，到 DC、PrimeTime、Innovus 與 Calibre，記錄一次完整的數位 IC 設計流程。</p>
+        <div class="article-meta"><span>2026-11-14</span><span>◷ 約 6 分鐘</span><div class="tags"><span>THUMB CPU</span><span>Pipeline</span><span>APR</span><span>LVS</span></div></div></div></section>
+        <div class="wrap article-grid"><article class="prose"><blockquote>
+<p>實驗主題：完成四級 Pipeline THUMB CPU，從 RTL / Gate-Level Simulation，延伸至 Synthesis、STA、APR、DRC 與 LVS。整理依據為本人《HDL HW3 Pipelined THUMB CPU》作業報告初稿。</p>
+</blockquote>
+<h2 id="section-1">01 / 四級 Pipeline 架構</h2>
+<p>這次將 THUMB CPU 劃分成 <strong>IF（Instruction Fetch）、ID（Instruction Decode）、EX（Execute）、WB（Write Back）</strong> 四個 Pipeline Stage，並各自封裝成獨立模組，方便觀察各 Stage 的 Critical Path。</p>
+<div class="table-scroller"><table>
+<thead>
+<tr>
+  <th>Stage</th>
+  <th>模組</th>
+  <th>主要工作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>IF</td>
+  <td><code>s1 / thumb_if</code></td>
+  <td>取指令</td>
+</tr>
+<tr>
+  <td>ID</td>
+  <td><code>s2 / thumb_id</code></td>
+  <td>解碼指令</td>
+</tr>
+<tr>
+  <td>EX</td>
+  <td><code>s3 / thumb_ex</code></td>
+  <td>執行運算</td>
+</tr>
+<tr>
+  <td>WB</td>
+  <td><code>s4 / thumb_wb</code></td>
+  <td>寫回結果</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="section-2">02 / RTL 與 Gate-Level Simulation</h2>
+<p>使用既有 Testbench 檢查時脈、重置、記憶體存取及 Stage 間資料傳遞。驗證目標包含指定的資料位址 <strong><code>0x100</code></strong> 與資料值 <strong><code>0x24</code></strong>。除了比較 RTL 與 Gate-Level 波形，還需要確認 Testbench 最後的判定訊息。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-rtl-wave.webp" alt="HW3 RTL simulation"/><figcaption>HW3 RTL simulation</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw3-gate-wave.webp" alt="HW3 Gate-level simulation"/><figcaption>HW3 Gate-level simulation</figcaption></figure>
+<h2 id="section-3">03 / Synthesis 與 Timing Analysis</h2>
+<p>依照老師要求，使用 <strong>Area-opt、Delay-opt、In-between</strong> 三種條件比較 DC 合成結果，再以 PrimeTime 分析功耗。報告中保存的早期比較資料顯示，Delay-opt 的面積較 Area-opt 大，但 Critical Delay 較短，反映硬體資源與速度之間的取捨。</p>
+<p><strong>資料狀態提醒</strong>：原始 HW3 報告已註明，三組 DC/PT PPA 表格與部分截圖為先前執行的資料，尚需和最終 RTL、Gate Netlist 版本核對。這裡將其保留為實驗紀錄，不當作最後同版量測結論。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-ppa-table.webp" alt="HW3 PPA 比較表（舊版資料，待核對）"/><figcaption>HW3 PPA 比較表（舊版資料，待核對）</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw3-dc-area.webp" alt="HW3 Design Compiler Area Report"/><figcaption>HW3 Design Compiler Area Report</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw3-pt-power.webp" alt="HW3 PrimeTime Power Report"/><figcaption>HW3 PrimeTime Power Report</figcaption></figure>
+<h2 id="section-4">04 / APR 與 Setup / Hold</h2>
+<p>APR 流程使用 Innovus，包含 Floorplan、Placement、Clock Tree Synthesis、Routing 與 Timing Optimization。最終 Post-Route Timing Report 記錄：</p>
+<div class="table-scroller"><table>
+<thead>
+<tr>
+  <th>指標</th>
+  <th>最終 APR 結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Setup WNS</td>
+  <td><strong>+0.780 ns</strong></td>
+</tr>
+<tr>
+  <td>Hold WNS</td>
+  <td><strong>+0.007 ns</strong></td>
+</tr>
+<tr>
+  <td>Setup / Hold TNS</td>
+  <td><strong>0.000 ns</strong></td>
+</tr>
+<tr>
+  <td>Violating Paths</td>
+  <td><strong>0</strong></td>
+</tr>
+</tbody>
+</table></div>
+<figure><img loading="lazy" src="../assets/images/hw3-setup.webp" alt="HW3 Post-Route Setup Timing"/><figcaption>HW3 Post-Route Setup Timing</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw3-hold.webp" alt="HW3 Post-Route Hold Timing"/><figcaption>HW3 Post-Route Hold Timing</figcaption></figure>
+<p>這次學到要區分 <strong>Setup</strong> 與 <strong>Hold</strong> 的檢查意義，並確認數值是在實體設計的哪個階段取得。</p>
+<h2 id="section-5">05 / DRC 與 LVS：最重要的排錯經驗</h2>
+<p>詳細繞線之後曾遇到 DRC Short，完成修正後，檢查結果為 <strong>Verification Complete：0 Violations</strong>。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-drc.webp" alt="HW3 DRC 0 Violations"/><figcaption>HW3 DRC 0 Violations</figcaption></figure>
+<p>第一次 LVS 顯示 <strong>INCORRECT</strong>，原因是 Layout 中有 <strong>6,593 顆 DCAP</strong>，但 Source Netlist 中未對應到。後來根據更新的 <code>write_netlist.tcl</code> 調整 Physical Cell 的輸出方式，重新產生 PG Netlist、V2LVS 並執行 Calibre LVS，最後得到 <strong>CORRECT</strong>。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-lvs.webp" alt="HW3 Calibre LVS CORRECT"/><figcaption>HW3 Calibre LVS CORRECT</figcaption></figure>
+<p>這段經驗讓我理解：LVS 不一致的來源可能是 Netlist 與 Physical-Only Cells 的對應問題，未必是 RTL 功能錯誤。</p>
+<h2 id="section-6">06 / Physical Layout 與 Module Highlight</h2>
+<p>下圖是完成 APR 後的 Layout 與四個 Pipeline Stage 的 Highlight。實體設計中的 Cell Placement 會依據走線、擁塞與 Timing 安排位置，因此 RTL 裡的四個邏輯模組，在 Layout 裡可能互相交錯。</p>
+<figure><img loading="lazy" src="../assets/images/hw3-layout.webp" alt="HW3 最終 Physical Layout"/><figcaption>HW3 最終 Physical Layout</figcaption></figure>
+<figure><img loading="lazy" src="../assets/images/hw3-highlight.webp" alt="HW3 Pipeline 各 Stage 的 Highlight"/><figcaption>HW3 Pipeline 各 Stage 的 Highlight</figcaption></figure>
+<h2 id="section-7">07 / 學習心得</h2>
+<p>這次真正將流程從 <strong>RTL → Simulation → Synthesis → STA → APR → DRC / LVS</strong> 串起來。功能模擬正確後，實體設計仍要完成繞線、時序與電路比對。HW3 最值得記下的是 LVS 修正：由報告內容追查 Physical Cell 與 Netlist 的差異，讓我第一次比較完整地理解 Signoff 階段在做什麼。</p>
+<p><em>資料來源：本人 HDL HW3 報告初稿，整理日期 2026-11-14。部分 DC/PT PPA 結果尚待同版核對；已完成的 APR、DRC、LVS 結果據該報告記錄。</em></p>
+<nav class="article-prevnext" aria-label="文章導覽"><a href="../index.html#assignments">← 回到文章列表</a><a href="#">↑ 回到頂端</a></nav></article>
+         <aside class="article-aside"><div class="toc-title">ON THIS PAGE / 文章目錄</div><nav class="toc" data-toc aria-label="本篇目錄"></nav><div class="aside-bottom"><a href="../index.html#assignments">↗ 全部作業紀錄</a><a href="../index.html#notes">↗ 全部技術筆記</a></div></aside></div></main>
+      <div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="圖片放大預覽" aria-hidden="true"><button class="lightbox-close" data-lightbox-close aria-label="關閉圖片">×</button><img alt="放大圖片"/><div class="lightbox-caption" data-lightbox-caption></div></div><footer class="footer"><div class="wrap footer-inner"><p>© 2026 HDL Lab Notes · Hardware Description Language / Learning Journal</p><div class="utility-links"><a href="../index.html">回到首頁</a><a href="../AGENTS.md" target="_blank" rel="noopener">AI 開發規範 ↗</a></div></div></footer></body></html>
